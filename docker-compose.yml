@@ -1,0 +1,9 @@
+
+version: '3.7'
+
+services:
+
+  check-test-results:
+    build:
+      context: test/check-test-results
+    image: cyberdojo/check-test-results
