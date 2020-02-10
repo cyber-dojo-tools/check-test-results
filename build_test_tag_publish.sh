@@ -5,7 +5,7 @@ readonly ROOT_DIR="$( cd "$( dirname "${0}" )" && pwd )"
 #- - - - - - - - - - - - - - - - - - - - - - - - -
 image_name()
 {
-  echo cyberdojotools/check-test-results
+  echo cyberdojo/check-test-results
 }
 
 #- - - - - - - - - - - - - - - - - - - - - - - - -
