@@ -47,6 +47,53 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def get_index_stats(name)
+  # It would be nice if simplecov saved the raw data to a json file
+  # and created the html from that, but alas it does not.
+  get_index_stats_gem_0_17_0(name)
+  #get_index_stats_gem_0_18_1(name)
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
+def get_index_stats_gem_0_18_1(name)
+  html = `cat #{ARGV[1]}`
+  html = cleaned(html)
+  pattern = /<div class=\"file_list_container\" id=\"#{name}\">
+  \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
+  \s*\(<span class=\"covered_percent\">
+  \s*<span class=\"\w+\">
+  \s*([\d\.]*)\%\s*<\/span>\s*<\/span>
+  \s*covered at
+  \s*<span class=\"covered_strength\">
+  \s*<span class=\"\w+\">
+  \s*(#{number})
+  \s*<\/span>
+  \s*<\/span> hits\/line
+  \s*\)
+  \s*<\/h2>\s*
+  \s*<a name=\"#{name}\"><\/a>\s*
+  \s*<div>\s*
+  \s*<b>#{number}<\/b> files in total.\s*
+  \s*<\/div>\s*
+  \s*<div class=\"t-line-summary\">\s*
+  \s*<b>(#{number})<\/b> relevant lines./m
+
+  r = html.match(pattern)
+
+  if r.nil?
+    puts "REGEX match failed..."
+    exit(42)
+  end
+
+  h = {}
+  h[:coverage]      = f2(r[1])
+  h[:hits_per_line] = f2(r[2])
+  h[:line_count]    = r[3].to_i
+  h[:name] = name
+  h
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
+def get_index_stats_gem_0_17_0(name)
   html = `cat #{INDEX_HTML}`
   html = cleaned(html)
   pattern = /<div class=\"file_list_container\" id=\"#{name}\">
@@ -64,12 +111,18 @@ def get_index_stats(name)
   \s*<b>#{number}<\/b> files in total.
   \s*<b>(#{number})<\/b> relevant lines./m
   r = html.match(pattern)
-  {
-    :coverage      => f2(r[1]),
-    :hits_per_line => f2(r[2]),
-    :line_count    => r[3].to_i,
-    :name          => name
-  }
+
+  if r.nil?
+    puts "REGEX match failed..."
+    exit(42)
+  end
+
+  h = {}
+  h[:coverage]      = f2(r[1])
+  h[:hits_per_line] = f2(r[2])
+  h[:line_count]    = r[3].to_i
+  h[:name] = name
+  h
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
