@@ -79,6 +79,9 @@ def get_index_stats(name)
   if index_html.include?('v0.17.0')
     return get_index_stats_gem_0_17_0(name)
   end
+  if index_html.include?('v0.17.1')
+    return get_index_stats_gem_0_17_0(name)
+  end
   if index_html.include?('v0.18.1')
     return get_index_stats_gem_0_18_1(name)
   end
