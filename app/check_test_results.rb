@@ -205,10 +205,10 @@ table = [
   [ 'skips',                  skip_count,     '<=',  MAX[:skips] ],
   [ 'duration(test)[s]',      test_duration,  '<=',  MAX[:duration] ],
 #  [ 'tests',                  test_count,     '>=',  MIN[:test_count] ],
-  [ 'coverage(app)[%]',       app_coverage,   '>=',  MIN[:app_coverage] ],
-  [ 'coverage(test)[%]',      test_coverage,  '>=',  MIN[:test_coverage] ],
-  [ 'lines(test)/lines(app)', f2(line_ratio), '>=',  MIN[:line_ratio] ],
-  [ 'hits(app)/hits(test)',   f2(hits_ratio), '>=',  MIN[:hits_ratio] ],
+  [ 'coverage(tested)[%]',    app_coverage,   '>=',  MIN[:app_coverage] ],
+  [ 'coverage(tester)[%]',    test_coverage,  '>=',  MIN[:test_coverage] ],
+  [ 'lines(tester/tested)',   f2(line_ratio), '>=',  MIN[:line_ratio] ],
+  [ 'hits(tested/tester)',    f2(hits_ratio), '>=',  MIN[:hits_ratio] ],
 ]
 
 # - - - - - - - - - - - - - - - - - - - - - - -
