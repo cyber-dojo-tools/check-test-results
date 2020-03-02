@@ -16,13 +16,13 @@ def fatal_error(message)
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
-def coverage_code_group_name
-  ENV['COVERAGE_CODE_GROUP_NAME']
+def coverage_code_tab_name
+  ENV['COVERAGE_CODE_TAB_NAME']
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
-def coverage_test_group_name
-  ENV['COVERAGE_TEST_GROUP_NAME']
+def coverage_test_tab_name
+  ENV['COVERAGE_TEST_TAB_NAME']
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
@@ -177,8 +177,8 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 log_stats = get_test_log_stats
-test_stats = get_index_stats(coverage_test_group_name)
-app_stats = get_index_stats(coverage_code_group_name)
+test_stats = get_index_stats(coverage_test_tab_name)
+app_stats = get_index_stats(coverage_code_tab_name)
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 test_count    = log_stats[:test_count]
@@ -204,7 +204,7 @@ table = [
   [ 'warnings',               warning_count,  '<=',  MAX[:warnings] ],
   [ 'skips',                  skip_count,     '<=',  MAX[:skips] ],
   [ 'duration(test)[s]',      test_duration,  '<=',  MAX[:duration] ],
-#  [ 'tests',                  test_count,     '>=',  MIN[:test_count] ],
+  [ 'tests',                  test_count,     '>=',  MIN[:test_count] ],
   [ 'coverage(tested)[%]',    app_coverage,   '>=',  MIN[:app_coverage] ],
   [ 'coverage(tester)[%]',    test_coverage,  '>=',  MIN[:test_coverage] ],
   [ 'lines(tester/tested)',   f2(line_ratio), '>=',  MIN[:line_ratio] ],
