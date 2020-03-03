@@ -5,7 +5,9 @@
 #    It would be nice if simplecov saved the raw data to a json file
 #    and created the html from that, but alas it does not.
 #    At the moment its from simplecov 0.17.0
-#    Simplecov will soon support branch-coverage.
+#    Simplecov now supports branch-coverage.
+#    However, it breaks my use of two tab groups off the root dir.
+#    See https://github.com/colszowka/simplecov/issues/860
 
 require_relative 'metrics'
 
@@ -77,19 +79,19 @@ def get_index_stats(name)
   # It would be nice if simplecov saved the raw data to a json file
   # and created the html from that, but alas it does not.
   if index_html.include?('v0.17.0')
-    return get_index_stats_gem_0_17_0(name)
+    return get_index_stats_gem_0_17_0(name, '0.17.0')
   end
   if index_html.include?('v0.17.1')
-    return get_index_stats_gem_0_17_0(name)
+    return get_index_stats_gem_0_17_0(name, '0.17.1')
   end
   if index_html.include?('v0.18.1')
-    return get_index_stats_gem_0_18_1(name)
+    return get_index_stats_gem_0_18_1(name, '0.18.1')
   end
   fatal_error('Unknown simplecov version')
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
-def get_index_stats_gem_0_17_0(name)
+def get_index_stats_gem_0_17_0(name, version)
   pattern = /<div class=\"file_list_container\" id=\"#{name}\">
   \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
   \s*\(<span class=\"covered_percent\"><span class=\"\w+\">([\d\.]*)\%<\/span><\/span>
@@ -106,7 +108,7 @@ def get_index_stats_gem_0_17_0(name)
   \s*<b>(#{number})<\/b> relevant lines./m
 
   r = index_html.match(pattern)
-  fatal_error('REGEX match failed...') if r.nil?
+  fatal_error("#{version} REGEX match failed...") if r.nil?
 
   h = {}
   h[:coverage]      = f2(r[1])
@@ -117,7 +119,7 @@ def get_index_stats_gem_0_17_0(name)
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
-def get_index_stats_gem_0_18_1(name)
+def get_index_stats_gem_0_18_1(name, version)
   pattern = /<div class=\"file_list_container\" id=\"#{name}\">
   \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
   \s*\(<span class=\"covered_percent\">
@@ -139,7 +141,7 @@ def get_index_stats_gem_0_18_1(name)
   \s*<b>(#{number})<\/b> relevant lines./m
 
   r = index_html.match(pattern)
-  fatal_error('REGEX match failed...') if r.nil?
+  fatal_error("#{version} REGEX match failed...") if r.nil?
 
   h = {}
   h[:coverage]      = f2(r[1])
@@ -176,6 +178,17 @@ def get_test_log_stats
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
+def safe_divide(nom, denom, name)
+  upper = nom[name]
+  lower = denom[name]
+  if lower === 0
+    fail "ERROR (#{name})==0"
+  else
+    upper.to_f / lower.to_f
+  end
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
 log_stats = get_test_log_stats
 test_stats = get_index_stats(coverage_test_tab_name)
 app_stats = get_index_stats(coverage_code_tab_name)
@@ -191,12 +204,13 @@ test_duration = log_stats[:time].to_f
 app_coverage  = app_stats[:coverage].to_f
 test_coverage = test_stats[:coverage].to_f
 
-line_ratio = (test_stats[:line_count].to_f / app_stats[:line_count].to_f)
+tsc = test_stats[:line_count]
+asc = app_stats[:line_count]
+line_ratio = safe_divide(test_stats, app_stats, :line_count)
 
-#puts " app_stats[:hits_per_line] == #{app_stats[:hits_per_line].to_f}"
-#puts "test_stats[:hits_per_line] == #{test_stats[:hits_per_line].to_f}"
-
-hits_ratio = (app_stats[:hits_per_line].to_f / test_stats[:hits_per_line].to_f)
+asr = app_stats[:hits_per_line].to_f
+tsr = test_stats[:hits_per_line].to_f
+hits_ratio = safe_divide(app_stats, test_stats, :hits_per_line)
 
 table = [
   [ 'failures',               failure_count,  '<=',  MAX[:failures] ],
