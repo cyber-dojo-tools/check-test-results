@@ -87,6 +87,9 @@ def get_index_stats(name)
   if index_html.include?('v0.18.1')
     return get_index_stats_gem_0_18_1(name, '0.18.1')
   end
+  if index_html.include?('v0.19')
+    return get_index_stats_gem_0_19_0(name, '0.19.0')
+  end
   fatal_error('Unknown simplecov version')
 end
 
@@ -120,6 +123,39 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def get_index_stats_gem_0_18_1(name, version)
+  pattern = /<div class=\"file_list_container\" id=\"#{name}\">
+  \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
+  \s*\(<span class=\"covered_percent\">
+  \s*<span class=\"\w+\">
+  \s*([\d\.]*)\%\s*<\/span>\s*<\/span>
+  \s*covered at
+  \s*<span class=\"covered_strength\">
+  \s*<span class=\"\w+\">
+  \s*(#{number})
+  \s*<\/span>
+  \s*<\/span> hits\/line
+  \s*\)
+  \s*<\/h2>\s*
+  \s*<a name=\"#{name}\"><\/a>\s*
+  \s*<div>\s*
+  \s*<b>#{number}<\/b> files in total.\s*
+  \s*<\/div>\s*
+  \s*<div class=\"t-line-summary\">\s*
+  \s*<b>(#{number})<\/b> relevant lines./m
+
+  r = index_html.match(pattern)
+  fatal_error("#{version} REGEX match failed...") if r.nil?
+
+  h = {}
+  h[:coverage]      = f2(r[1])
+  h[:hits_per_line] = f2(r[2])
+  h[:line_count]    = r[3].to_i
+  h[:name] = name
+  h
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
+def get_index_stats_gem_0_19_0(name, version)
   pattern = /<div class=\"file_list_container\" id=\"#{name}\">
   \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
   \s*\(<span class=\"covered_percent\">
