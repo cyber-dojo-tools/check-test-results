@@ -8,8 +8,7 @@ jobs:
       - run:
           name: Build image, test it, tag it, publish it
           command: |
-            # DOCKER_USER, DOCKER_PASS are in ci context
-            echo "${DOCKER_PASS}" | docker login --username "${DOCKER_USER}" --password-stdin
+            echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
             ./build_test_publish.sh
             docker logout
 
