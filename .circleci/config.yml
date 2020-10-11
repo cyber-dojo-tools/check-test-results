@@ -1,24 +1,15 @@
-version: 2
+version: 2.1
+orbs:
+  ruby: circleci/ruby@0.1.2 
+
 jobs:
-  build-publish:
-    machine:
-      image: ubuntu-1604:201903-01
+  build:
+    docker:
+      - image: circleci/ruby:2.6.3-stretch-node
+    executor: ruby/default
     steps:
       - checkout
       - run:
-          name: Build image, test it, tag it, publish it
-          command: |
-            # DOCKER_USER, DOCKER_PASS are in ci context
-            echo "${DOCKER_PASS}" | docker login --username "${DOCKER_USER}" --password-stdin
-            ./build_test_publish.sh
-            docker logout
-
-workflows:
-  version: 2
-  build-publish-deploy:
-    jobs:
-      - build-publish:
-          context: cyberdojo-context
-          filters:
-            branches:
-              only: [ master ]
+          name: Which bundler?
+          command: bundle -v
+      - ruby/bundle-install
