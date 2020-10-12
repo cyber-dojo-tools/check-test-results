@@ -46,17 +46,10 @@ end
 # - - - - - - - - - - - - - - - - - - - - - - -
 def version
   $version ||= begin
-    if index_html.include?('v0.17.0')
-      return '0.17.0'
-    end
-    if index_html.include?('v0.17.1')
-      return '0.17.1'
-    end
-    if index_html.include?('v0.18.1')
-      return '0.18.1'
-    end
-    if index_html.include?('v0.19.0')
-      return '0.19.0'
+    %w( 0.17.0 0.17.1 0.18.1 0.19.0 ).each do |n|
+      if index_html.include?("v#{n}")
+        return n
+      end
     end
     fatal_error('Unknown simplecov version!')
   end
