@@ -1,15 +1,19 @@
 
-# This scrapes data from two sources
-# 0) The minitest stdout which is tee'd to test.log
-# 1) The simplecov coverage index.html file.
+# This scrapes data from three sources
+# 1) The minitest stdout which is tee'd to test.log
+# 2) The simplecov coverage index.html file.
 #    It would be nice if simplecov saved the raw data to a json file
 #    and created the html from that, but alas it does not.
 #    At the moment its from simplecov 0.17.0
 #    Simplecov now supports branch-coverage.
 #    However, it breaks my use of two tab groups off the root dir.
 #    See https://github.com/colszowka/simplecov/issues/860
+# 3) from simplecov 0.19.0 onwards uses coverage.json instead of
+#    index.html which is generated from a custom simplecov reporter.
+#    See https://github.com/cyber-dojo/differ/blob/master/test/lib/simplecov-json.rb
 
 require_relative 'metrics'
+require 'json'
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def fatal_error(message)
@@ -31,7 +35,7 @@ end
 def test_log
   $test_log ||= begin
     path = ARGV[0] # eg /app/data/test.log
-    cleaned(`cat #{path}`)
+    cleaned(IO.read(path))
   end
 end
 
@@ -39,7 +43,15 @@ end
 def index_html
   $index_html = begin
     path = ARGV[1] # eg /app/data/index.html
-    cleaned(`cat #{path}`)
+    cleaned(IO.read(path))
+  end
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
+def coverage_json
+  $coverage_json = begin
+    path = ARGV[2] # eg /app/data/coverage.json
+    JSON.parse(IO.read(path))
   end
 end
 
@@ -94,7 +106,7 @@ def get_index_stats(name)
     when '0.17.0' then get_index_stats_gem_0_17_0(name, '0.17.0')
     when '0.17.1' then get_index_stats_gem_0_17_0(name, '0.17.1')
     when '0.18.1' then get_index_stats_gem_0_18_1(name, '0.18.1')
-    when '0.19.0' then get_index_stats_gem_0_19_0(name, '0.19.0')
+    when '0.19.0' then coverage_json['groups'][name]
     else           fatal_error("Unknown simplecov version #{version}")
   end
 end
@@ -162,53 +174,7 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def get_index_stats_gem_0_19_0(name, version)
-  pattern = /<div class=\"file_list_container\" id=\"#{name}\">
-  \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
-  \s*\(<span class=\"covered_percent\">
-  \s*<span class=\"\w+\">
-  \s*(#{number})\%\s*<\/span>\s*<\/span>
-  \s*covered at
-  \s*<span class=\"covered_strength\">
-  \s*<span class=\"\w+\">
-  \s*(#{number})
-  \s*<\/span>
-  \s*<\/span> hits\/line
-  \s*\)
-  \s*<\/h2>\s*
-  \s*<a name=\"#{name}\"><\/a>\s*
-  \s*<div>\s*
-  \s*<b>#{number}<\/b> files in total.\s*
-  \s*<\/div>\s*
-  \s*<div class=\"t-line-summary\">\s*
-  \s*<b>(#{number})<\/b> relevant lines\,\s*
-  \s*<span class=\"\w+\"><b>(#{number})<\/b> lines covered<\/span> and\s*
-  \s*<span class=\"\w+\"><b>(#{number})<\/b> lines missed. <\/span>\s*
-  \s*\(<span class=\"\w+\">\s*#{number}\%\s*<\/span>\s*\)\s*
-  \s*<\/div>\s*
-  \s*<div class=\"t-branch-summary\">\s*
-  \s*<span><b>(#{number})<\/b> total branches\, <\/span>\s*
-  \s*<span class=\"\w+\"><b>(#{number})<\/b> branches covered<\/span> and\s*
-  \s*<span class=\"\w+\"><b>(#{number})<\/b> branches missed.<\/span>\s*
-  \s*\(<span class=\"\w+\">\s*#{number}\%\s*<\/span>\s*\)\s*
-  \s*<\/div>\s*
-  /m
-
-  r = index_html.match(pattern)
-  fatal_error("#{version} REGEX match failed...") if r.nil?
-
-  h = {}
-  h[:coverage]      = f2(r[1])
-  h[:hits_per_line] = f2(r[2])
-
-  h[:line_count]    = r[3].to_i
-  h[:lines_covered] = r[4].to_i
-  h[:lines_missed]  = r[5].to_i
-
-  h[:branch_count]     = r[6].to_i
-  h[:branches_covered] = r[7].to_i
-  h[:branches_missed]  = r[8].to_i
-  h[:name] = name
-  h
+  coverage_json['groups'][name]
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
@@ -250,10 +216,7 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 log_stats = get_test_log_stats
-test_stats = get_index_stats(coverage_test_tab_name)
-app_stats = get_index_stats(coverage_code_tab_name)
 
-# - - - - - - - - - - - - - - - - - - - - - - -
 test_count    = log_stats[:test_count]
 failure_count = log_stats[:failure_count]
 error_count   = log_stats[:error_count]
@@ -261,44 +224,46 @@ warning_count = log_stats[:warning_count]
 skip_count    = log_stats[:skip_count]
 test_duration = log_stats[:time].to_f
 
-app_coverage  = app_stats[:coverage].to_f
-test_coverage = test_stats[:coverage].to_f
-
-tsc = test_stats[:line_count]
-asc = app_stats[:line_count]
-line_ratio = safe_divide(test_stats, app_stats, :line_count)
-
-asr = app_stats[:hits_per_line].to_f
-tsr = test_stats[:hits_per_line].to_f
-hits_ratio = safe_divide(app_stats, test_stats, :hits_per_line)
-
 table = [
   [ 'test:failures',    failure_count,  '<=',  MAX[:failures  ] ],
   [ 'test:errors',      error_count,    '<=',  MAX[:errors    ] ],
   [ 'test:warnings',    warning_count,  '<=',  MAX[:warnings  ] ],
   [ 'test:skips',       skip_count,     '<=',  MAX[:skips     ] ],
-  [ 'test:duration[s]', test_duration,  '<=',  MAX[:duration  ] ],
+  [ 'test:duration(s)', test_duration,  '<=',  MAX[:duration  ] ],
   [ 'test:count',       test_count,     '>=',  MIN[:test_count] ],
-  [ 'lines(test/app)',  f2(line_ratio), '>=',  MIN[:line_ratio] ],
-  [ 'hits(app/test)',   f2(hits_ratio), '>=',  MIN[:hits_ratio] ],
 ]
+
+test_stats = get_index_stats(coverage_test_tab_name)
+app_stats = get_index_stats(coverage_code_tab_name)
 
 if version === '0.19.0'
   table += [
-    [ ' app:line_count',       app_stats[:line_count     ], '<=', MAX[:app_line_count      ] ],
-    [ ' app:lines_missed',     app_stats[:lines_missed   ], '<=', MAX[:app_lines_missed    ] ],
-    [ ' app:branch_count',     app_stats[:branch_count   ], '<=', MAX[:app_branch_count    ] ],
-    [ ' app:branches_missed',  app_stats[:branches_missed], '<=', MAX[:app_branches_missed ] ],
+    [ 'app:lines:total',      app_stats['lines'   ]['total' ], '<=', MAX[:app][:lines   ][:total ] ],
+    [ 'app:lines:missed',     app_stats['lines'   ]['missed'], '<=', MAX[:app][:lines   ][:missed] ],
+    [ 'app:branches:total',   app_stats['branches']['total' ], '<=', MAX[:app][:branches][:total ] ],
+    [ 'app:branches:missed',  app_stats['branches']['missed'], '<=', MAX[:app][:branches][:missed] ],
 
-    [ 'test:lines_missed',    test_stats[:lines_missed   ], '<=', MAX[:test_lines_missed   ] ],
-    [ 'test:branch_count',    test_stats[:branch_count   ], '<=', MAX[:test_branch_count   ] ],
-    [ 'test:branches_missed', test_stats[:branches_missed], '<=', MAX[:test_branches_missed] ],
+    [ 'test:lines:total',     test_stats['lines'   ]['total' ], '<=', MAX[:test][:lines   ][:total  ] ],
+    [ 'test:lines:missed',    test_stats['lines'   ]['missed'], '<=', MAX[:test][:lines   ][:missed ] ],
+    [ 'test:branches:total',  test_stats['branches']['total' ], '<=', MAX[:test][:branches][:total  ] ],
+    [ 'test:branches:missed', test_stats['branches']['missed'], '<=', MAX[:test][:branches][:missed ] ],
   ]
 else
-  table += [
-    [ ' app:coverage[%]',  app_coverage,  '>=',  MIN[:app_coverage ] ],
-    [ 'test:coverage[%]', test_coverage,  '>=',  MIN[:test_coverage] ]
-  ]
+  tsc = test_stats[:line_count]
+  asc = app_stats[:line_count]
+  line_ratio = safe_divide(test_stats, app_stats, :line_count)
+  table << [ 'lines(test/app)',  f2(line_ratio), '>=',  MIN[:line_ratio] ]
+
+  asr = app_stats[:hits_per_line].to_f
+  tsr = test_stats[:hits_per_line].to_f
+  hits_ratio = safe_divide(app_stats, test_stats, :hits_per_line)
+  table << [ 'hits(app/test)',   f2(hits_ratio), '>=',  MIN[:hits_ratio] ]
+
+  app_coverage  = app_stats[:coverage].to_f
+  table << [ ' app:coverage[%]',  app_coverage,  '>=',  MIN[:app_coverage] ]
+
+  test_coverage = test_stats[:coverage].to_f
+  table << [ 'test:coverage[%]', test_coverage,  '>=',  MIN[:test_coverage] ]
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
