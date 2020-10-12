@@ -166,7 +166,7 @@ def get_index_stats_gem_0_19_0(name, version)
   \s*<h2>\s*<span class=\"group_name\">#{name}<\/span>
   \s*\(<span class=\"covered_percent\">
   \s*<span class=\"\w+\">
-  \s*([\d\.]*)\%\s*<\/span>\s*<\/span>
+  \s*(#{number})\%\s*<\/span>\s*<\/span>
   \s*covered at
   \s*<span class=\"covered_strength\">
   \s*<span class=\"\w+\">
@@ -180,7 +180,18 @@ def get_index_stats_gem_0_19_0(name, version)
   \s*<b>#{number}<\/b> files in total.\s*
   \s*<\/div>\s*
   \s*<div class=\"t-line-summary\">\s*
-  \s*<b>(#{number})<\/b> relevant lines./m
+  \s*<b>(#{number})<\/b> relevant lines\,\s*
+  \s*<span class=\"\w+\"><b>(#{number})<\/b> lines covered<\/span> and\s*
+  \s*<span class=\"\w+\"><b>(#{number})<\/b> lines missed. <\/span>\s*
+  \s*\(<span class=\"\w+\">\s*#{number}\%\s*<\/span>\s*\)\s*
+  \s*<\/div>\s*
+  \s*<div class=\"t-branch-summary\">\s*
+  \s*<span><b>(#{number})<\/b> total branches\, <\/span>\s*
+  \s*<span class=\"\w+\"><b>(#{number})<\/b> branches covered<\/span> and\s*
+  \s*<span class=\"\w+\"><b>(#{number})<\/b> branches missed.<\/span>\s*
+  \s*\(<span class=\"\w+\">\s*#{number}\%\s*<\/span>\s*\)\s*
+  \s*<\/div>\s*
+  /m
 
   r = index_html.match(pattern)
   fatal_error("#{version} REGEX match failed...") if r.nil?
@@ -188,7 +199,14 @@ def get_index_stats_gem_0_19_0(name, version)
   h = {}
   h[:coverage]      = f2(r[1])
   h[:hits_per_line] = f2(r[2])
+
   h[:line_count]    = r[3].to_i
+  h[:lines_covered] = r[4].to_i
+  h[:lines_missed]  = r[5].to_i
+
+  h[:branch_count]     = r[6].to_i
+  h[:branches_covered] = r[7].to_i
+  h[:branches_missed]  = r[8].to_i
   h[:name] = name
   h
 end
