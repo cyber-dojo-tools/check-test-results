@@ -44,6 +44,25 @@ def index_html
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
+def version
+  $version ||= begin
+    if index_html.include?('v0.17.0')
+      return '0.17.0'
+    end
+    if index_html.include?('v0.17.1')
+      return '0.17.1'
+    end
+    if index_html.include?('v0.18.1')
+      return '0.18.1'
+    end
+    if index_html.include?('v0.19.0')
+      return '0.19.0'
+    end
+    fatal_error('Unknown simplecov version!')
+  end
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
 def cleaned(s)
   # guard against invalid byte sequence
   s = s.encode('UTF-16', 'UTF-8', :invalid => :replace, :replace => '')
@@ -78,19 +97,13 @@ end
 def get_index_stats(name)
   # It would be nice if simplecov saved the raw data to a json file
   # and created the html from that, but alas it does not.
-  if index_html.include?('v0.17.0')
-    return get_index_stats_gem_0_17_0(name, '0.17.0')
+  case version
+    when '0.17.0' then get_index_stats_gem_0_17_0(name, '0.17.0')
+    when '0.17.1' then get_index_stats_gem_0_17_0(name, '0.17.1')
+    when '0.18.1' then get_index_stats_gem_0_18_1(name, '0.18.1')
+    when '0.19.0' then get_index_stats_gem_0_19_0(name, '0.19.0')
+    else           fatal_error("Unknown simplecov version #{version}")
   end
-  if index_html.include?('v0.17.1')
-    return get_index_stats_gem_0_17_0(name, '0.17.1')
-  end
-  if index_html.include?('v0.18.1')
-    return get_index_stats_gem_0_18_1(name, '0.18.1')
-  end
-  if index_html.include?('v0.19')
-    return get_index_stats_gem_0_19_0(name, '0.19.0')
-  end
-  fatal_error('Unknown simplecov version')
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
