@@ -273,22 +273,39 @@ tsr = test_stats[:hits_per_line].to_f
 hits_ratio = safe_divide(app_stats, test_stats, :hits_per_line)
 
 table = [
-  [ 'failures',               failure_count,  '<=',  MAX[:failures] ],
-  [ 'errors',                 error_count,    '<=',  MAX[:errors] ],
-  [ 'warnings',               warning_count,  '<=',  MAX[:warnings] ],
-  [ 'skips',                  skip_count,     '<=',  MAX[:skips] ],
-  [ 'duration(test)[s]',      test_duration,  '<=',  MAX[:duration] ],
-  [ 'tests',                  test_count,     '>=',  MIN[:test_count] ],
-  [ 'coverage(tested)[%]',    app_coverage,   '>=',  MIN[:app_coverage] ],
-  [ 'coverage(tester)[%]',    test_coverage,  '>=',  MIN[:test_coverage] ],
-  [ 'lines(tester/tested)',   f2(line_ratio), '>=',  MIN[:line_ratio] ],
-  [ 'hits(tested/tester)',    f2(hits_ratio), '>=',  MIN[:hits_ratio] ],
+  [ 'test:failures',    failure_count,  '<=',  MAX[:failures  ] ],
+  [ 'test:errors',      error_count,    '<=',  MAX[:errors    ] ],
+  [ 'test:warnings',    warning_count,  '<=',  MAX[:warnings  ] ],
+  [ 'test:skips',       skip_count,     '<=',  MAX[:skips     ] ],
+  [ 'test:duration[s]', test_duration,  '<=',  MAX[:duration  ] ],
+  [ 'test:count',       test_count,     '>=',  MIN[:test_count] ],
+  [ 'lines(test/app)',  f2(line_ratio), '>=',  MIN[:line_ratio] ],
+  [ 'hits(app/test)',   f2(hits_ratio), '>=',  MIN[:hits_ratio] ],
 ]
+
+if version === '0.19.0'
+  table += [
+    [ ' app:line_count',       app_stats[:line_count     ], '<=', MAX[:app_line_count      ] ],
+    [ ' app:lines_missed',     app_stats[:lines_missed   ], '<=', MAX[:app_lines_missed    ] ],
+    [ ' app:branch_count',     app_stats[:branch_count   ], '<=', MAX[:app_branch_count    ] ],
+    [ ' app:branches_missed',  app_stats[:branches_missed], '<=', MAX[:app_branches_missed ] ],
+
+    [ 'test:lines_missed',    test_stats[:lines_missed   ], '<=', MAX[:test_lines_missed   ] ],
+    [ 'test:branch_count',    test_stats[:branch_count   ], '<=', MAX[:test_branch_count   ] ],
+    [ 'test:branches_missed', test_stats[:branches_missed], '<=', MAX[:test_branches_missed] ],
+  ]
+else
+  table += [
+    [ ' app:coverage[%]',  app_coverage,  '>=',  MIN[:app_coverage ] ],
+    [ 'test:coverage[%]', test_coverage,  '>=',  MIN[:test_coverage] ]
+  ]
+end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 done = []
 puts
 table.each do |name,value,op,limit|
+  #puts "name=#{name}, value=#{value}, op=#{op}, limit=#{limit}"
   result = eval("#{value} #{op} #{limit}")
   puts "%s | %s %s %s | %s" % [
     name.rjust(25), value.to_s.rjust(7), "  #{op}", limit.to_s.rjust(5), coloured(result)
