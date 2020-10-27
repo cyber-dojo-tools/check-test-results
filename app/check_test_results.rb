@@ -230,8 +230,11 @@ table = [
   [ 'test:warnings',    warning_count,  '<=',  MAX[:warnings  ] ],
   [ 'test:skips',       skip_count,     '<=',  MAX[:skips     ] ],
   [ 'test:duration(s)', test_duration,  '<=',  MAX[:duration  ] ],
-  [ 'test:count',       test_count,     '>=',  MIN[:test_count] ],
 ]
+
+if version != '0.19.0'
+  table << [ 'test:count', test_count, '>=',  MIN[:test_count] ]
+end
 
 test_stats = get_index_stats(coverage_test_tab_name)
 app_stats = get_index_stats(coverage_code_tab_name)
