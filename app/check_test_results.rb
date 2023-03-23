@@ -58,7 +58,7 @@ end
 # - - - - - - - - - - - - - - - - - - - - - - -
 def version
   $version ||= begin
-    %w( 0.17.0 0.17.1 0.18.1 0.19.0 0.19.1 ).each do |n|
+    %w( 0.17.0 0.17.1 0.18.1 0.19.0 0.19.1 0.21.2 ).each do |n|
       if index_html.include?("v#{n}")
         return n
       end
@@ -108,6 +108,7 @@ def get_index_stats(name)
     when '0.18.1' then get_index_stats_gem_0_18_1(name, '0.18.1')
     when '0.19.0' then coverage_json['groups'][name]
     when '0.19.1' then coverage_json['groups'][name]
+    when '0.21.2' then coverage_json['groups'][name]
     else           fatal_error("Unknown simplecov version #{version}")
   end
 end
@@ -211,6 +212,11 @@ def safe_divide(nom, denom, name)
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
+def recent?(version)
+  ['0.19.0', '0.19.1', '0.21.2'].include?(version)
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
 log_stats = get_test_log_stats
 
 test_count    = log_stats[:test_count]
@@ -228,14 +234,14 @@ table = [
   [ 'test:duration(s)', test_duration,  '<=',  MAX[:duration  ] ],
 ]
 
-unless ['0.19.0', '0.19.1'].include?(version)
+unless recent?(version)
   table << [ 'test:count', test_count, '>=',  MIN[:test_count] ]
 end
 
 test_stats = get_index_stats(coverage_test_tab_name)
 app_stats = get_index_stats(coverage_code_tab_name)
 
-if ['0.19.0', '0.19.1'].include?(version)
+if recent?(version)
   table += [
     [ 'app:lines:total',      app_stats['lines'   ]['total' ], '<=', MAX[:app][:lines   ][:total ] ],
     [ 'app:lines:missed',     app_stats['lines'   ]['missed'], '<=', MAX[:app][:lines   ][:missed] ],
