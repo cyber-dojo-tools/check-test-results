@@ -1,0 +1,4 @@
+main.yml is currently broken.
+
+Eg, see https://github.com/cyber-dojo-tools/check-test-results/actions/runs/6217886506
+The workflow is not valid. .github/workflows/main.yml (Line: 14, Col: 3): Error calling workflow 'cyber-dojo/reusable-actions-workflows/.github/workflows/kosli_build_test_push_dockerhub.yml@main'. The nested job 'build' is requesting 'id-token: write', but is only allowed 'id-token: none'.
