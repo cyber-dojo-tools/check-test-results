@@ -9,7 +9,7 @@
 #    However, it breaks my use of two tab groups off the root dir.
 #    See https://github.com/colszowka/simplecov/issues/860
 # 3) from simplecov 0.19.0 onwards uses coverage.json instead of
-#    index.html which is generated from a custom simplecov reporter.
+#    index.html which is generated from a custom simplecov json reporter.
 #    See https://github.com/cyber-dojo/differ/blob/master/test/lib/simplecov-json.rb
 
 require_relative 'metrics'
@@ -34,37 +34,51 @@ end
 # - - - - - - - - - - - - - - - - - - - - - - -
 def test_log
   $test_log ||= begin
-    path = ARGV[0] # eg /app/data/test.log
-    cleaned(IO.read(path))
+    if ARGV[0].nil?
+      fatal_error("ARGV[0] must be the path to the test log file")
+    else
+      cleaned(IO.read(ARGV[0]))  # eg /app/data/test.log
+    end
   end
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def index_html
   $index_html = begin
-    path = ARGV[1] # eg /app/data/index.html
-    cleaned(IO.read(path))
+    if ARGV[1].nil?
+      fatal_error("ARGV[0] must be the path to the index html file")
+    else
+      cleaned(IO.read(ARGV[1]))  # eg /app/data/index.html
+    end
   end
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def coverage_json
   $coverage_json = begin
-    path = ARGV[2] # eg /app/data/coverage.json
-    JSON.parse(IO.read(path))
+    if ARGV[2].nil?
+      fatal_error("ARGV[2] must be the path to the coverage json file")
+    else
+      JSON.parse(IO.read(ARGV[2]))  # eg /app/data/coverage.json
+    end
   end
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def version
   $version ||= begin
-    %w( 0.17.0 0.17.1 0.18.1 0.19.0 0.19.1 0.21.2 ).each do |n|
+    %w( 0.17.0 0.17.1 0.18.1 0.19.0 0.19.1 0.21.2 0.22.0 ).each do |n|
       if index_html.include?("v#{n}")
         return n
       end
     end
     fatal_error('Unknown simplecov version!')
   end
+end
+
+# - - - - - - - - - - - - - - - - - - - - - - -
+def recent?(version)
+  ['0.19.0', '0.19.1', '0.21.2', '0.22.0'].include?(version)
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
@@ -100,8 +114,6 @@ end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
 def get_index_stats(name)
-  # It would be nice if simplecov saved the raw data to a json file
-  # and created the html from that, but alas it does not.
   case version
     when '0.17.0' then get_index_stats_gem_0_17_0(name, '0.17.0')
     when '0.17.1' then get_index_stats_gem_0_17_0(name, '0.17.1')
@@ -109,6 +121,7 @@ def get_index_stats(name)
     when '0.19.0' then coverage_json['groups'][name]
     when '0.19.1' then coverage_json['groups'][name]
     when '0.21.2' then coverage_json['groups'][name]
+    when '0.22.0' then coverage_json['groups'][name]
     else           fatal_error("Unknown simplecov version #{version}")
   end
 end
@@ -212,11 +225,6 @@ def safe_divide(nom, denom, name)
 end
 
 # - - - - - - - - - - - - - - - - - - - - - - -
-def recent?(version)
-  ['0.19.0', '0.19.1', '0.21.2'].include?(version)
-end
-
-# - - - - - - - - - - - - - - - - - - - - - - -
 log_stats = get_test_log_stats
 
 test_count    = log_stats[:test_count]
@@ -275,7 +283,7 @@ end
 done = []
 puts
 table.each do |name,value,op,limit|
-  #puts "name=#{name}, value=#{value}, op=#{op}, limit=#{limit}"
+  # puts "name=#{name}, value=#{value}, op=#{op}, limit=#{limit}"
   result = eval("#{value} #{op} #{limit}")
   puts "%s | %s %s %s | %s" % [
     name.rjust(25), value.to_s.rjust(7), "  #{op}", limit.to_s.rjust(5), coloured(result)
