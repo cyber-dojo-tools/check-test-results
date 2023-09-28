@@ -15,7 +15,7 @@ jobs:
     needs: [pre-build]
     permissions:
       id-token: write
-      contents: read
+      contents: write
     uses: cyber-dojo/reusable-actions-workflows/.github/workflows/kosli_build_test_push_dockerhub.yml@main
     secrets:
       DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
