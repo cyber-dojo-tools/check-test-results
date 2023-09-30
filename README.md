@@ -5,7 +5,7 @@ Eg [https://github.com/cyber-dojo/differ/blob/master/sh/test_in_containers.sh#L8
 
 Relies on input files:
 
-- coverage.json
+- coverage.json  
 As produced by [SimpleCov::Formatter::JSONFormatter](https://github.com/cyber-dojo/differ/blob/master/test/lib/simplecov_json.rb)
 installed in [coverage.rb](https://github.com/cyber-dojo/differ/blob/master/test/lib/coverage.rb)
 which is the actual metrics values for the test run being checked.
@@ -43,8 +43,8 @@ Eg
 }
 </pre>
 
-- [metrics.rb](https://github.com/cyber-dojo/differ/blob/main/test/lib/metrics.rb)
-Which is the metrics limits to check the previous coverage.json results against.
+- [metrics.rb](https://github.com/cyber-dojo/differ/blob/main/test/lib/metrics.rb)  
+The metrics limits to check the previous coverage.json results against.
 Eg
 <pre>
 MAX = {
